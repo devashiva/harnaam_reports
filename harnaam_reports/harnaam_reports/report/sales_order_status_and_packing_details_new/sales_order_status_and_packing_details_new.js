@@ -1,4 +1,4 @@
-frappe.query_reports["Current  Purchase Order Status"] = {
+frappe.query_reports["Sales Order Status and Packing details New"] = {
 	filters: [
 		{
 			fieldname: "company",
@@ -26,18 +26,14 @@ frappe.query_reports["Current  Purchase Order Status"] = {
 			default: frappe.datetime.get_today(),
 		},
 		{
-			fieldname: "project",
-			label: __("Project"),
-			fieldtype: "Link",
+			fieldname: "sales_order",
+			label: __("Sales Order"),
+			fieldtype: "MultiSelectList",
 			width: "80",
-			options: "Project",
-		},
-		{
-			fieldname: "name",
-			label: __("Purchase Order"),
-			fieldtype: "Link",
-			width: "80",
-			options: "Purchase Order",
+			options: "Sales Order",
+			get_data: function (txt) {
+				return frappe.db.get_link_options("Sales Order", txt);
+			},
 			get_query: () => {
 				return {
 					filters: { docstatus: 1 },
@@ -45,12 +41,18 @@ frappe.query_reports["Current  Purchase Order Status"] = {
 			},
 		},
 		{
+			fieldname: "warehouse",
+			label: __("Warehouse"),
+			fieldtype: "Link",
+			options: "Warehouse",
+		},
+		{
 			fieldname: "status",
 			label: __("Status"),
 			fieldtype: "MultiSelectList",
 			width: "80",
 			get_data: function (txt) {
-				let status = ["To Bill", "To Receive", "To Receive and Bill", "Completed"];
+				let status = ["To Bill", "To Deliver", "To Deliver and Bill", "Completed"];
 				let options = [];
 				for (let option of status) {
 					options.push({
@@ -63,8 +65,8 @@ frappe.query_reports["Current  Purchase Order Status"] = {
 			},
 		},
 		{
-			fieldname: "group_by_po",
-			label: __("Group by Purchase Order"),
+			fieldname: "group_by_so",
+			label: __("Group by Sales Order"),
 			fieldtype: "Check",
 			default: 0,
 		},
@@ -72,10 +74,14 @@ frappe.query_reports["Current  Purchase Order Status"] = {
 
 	formatter: function (value, row, column, data, default_formatter) {
 		value = default_formatter(value, row, column, data);
-		let format_fields = ["received_qty", "billed_amount"];
+		let format_fields = ["delivered_qty", "billed_amount"];
 
 		if (in_list(format_fields, column.fieldname) && data && data[column.fieldname] > 0) {
-			value = "<span style='color:green'>" + value + "</span>";
+			value = "<span style='color:green;'>" + value + "</span>";
+		}
+
+		if (column.fieldname == "delay" && data && data[column.fieldname] > 0) {
+			value = "<span style='color:red;'>" + value + "</span>";
 		}
 		return value;
 	},
